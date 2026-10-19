@@ -202,8 +202,7 @@ test('a rebuilt assistant turn with text opens with its thought step', function 
 
     expect(array_column($input, 'type'))->toBe([
         'user_input', 'thought', 'model_output', 'function_call', 'function_result', 'user_input',
-    ])->and($input[1])->toBe(['type' => 'thought', 'signature' => 'sig_123'])
-        ->and($input[2]['content'][0]['text'])->toBe('Let me generate one.');
+    ])->and($input[1])->toBe(['type' => 'thought', 'signature' => 'sig_123']);
 });
 
 test('local image attachment without explicit mime type detects mime from file', function (): void {

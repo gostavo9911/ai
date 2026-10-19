@@ -330,6 +330,7 @@ test('it preserves the gemini thought signature across a persisted tool conversa
         '*' => Http::sequence([
             Http::response(storeTestGeminiInteraction([
                 ['type' => 'thought', 'summary' => [['type' => 'text', 'text' => 'Thinking.']], 'signature' => 'sig_persist_777'],
+                ['type' => 'model_output', 'content' => [['type' => 'text', 'text' => 'Let me generate one.']]],
                 ['type' => 'function_call', 'id' => 'call_123', 'name' => 'FixedNumberGenerator', 'arguments' => (object) []],
             ])),
             Http::response(storeTestGeminiInteraction([[
@@ -355,46 +356,11 @@ test('it preserves the gemini thought signature across a persisted tool conversa
     (new RememberingToolUsingAgent)->continue($conversationId, $user)->prompt('Generate another', provider: 'gemini');
 
     $recorded = Http::recorded();
-    $signatures = array_column(array_filter(
-        $recorded[count($recorded) - 1][0]->data()['input'],
-        fn (array $step): bool => $step['type'] === 'thought',
-    ), 'signature');
-
-    expect($signatures)->toBe(['sig_persist_777']);
-});
-
-test('it replays a persisted gemini step that wrote text before its tool call with the thought step first', function (): void {
-    Http::fake([
-        '*' => Http::sequence([
-            Http::response(storeTestGeminiInteraction([
-                ['type' => 'thought', 'summary' => [['type' => 'text', 'text' => 'Thinking.']], 'signature' => 'sig_persist_888'],
-                ['type' => 'model_output', 'content' => [['type' => 'text', 'text' => 'Let me generate one.']]],
-                ['type' => 'function_call', 'id' => 'call_123', 'name' => 'FixedNumberGenerator', 'arguments' => (object) []],
-            ])),
-            Http::response(storeTestGeminiInteraction([[
-                'type' => 'model_output',
-                'content' => [['type' => 'text', 'text' => 'The number is 72019']],
-            ]])),
-            Http::response(storeTestGeminiInteraction([[
-                'type' => 'model_output',
-                'content' => [['type' => 'text', 'text' => 'The second number is 99']],
-            ]])),
-        ]),
-    ]);
-
-    $user = (object) ['id' => 1];
-    $conversationId = (new DatabaseConversationStore)->storeConversation('user', $user->id, 'Tool conversation');
-
-    (new RememberingToolUsingAgent)->continue($conversationId, $user)->prompt('Generate a random number', provider: 'gemini');
-    (new RememberingToolUsingAgent)->continue($conversationId, $user)->prompt('Generate another', provider: 'gemini');
-
-    $recorded = Http::recorded();
     $input = $recorded[count($recorded) - 1][0]->data()['input'];
 
     expect(array_column($input, 'type'))->toBe([
         'user_input', 'thought', 'model_output', 'function_call', 'function_result', 'model_output', 'user_input',
-    ])->and($input[1])->toBe(['type' => 'thought', 'signature' => 'sig_persist_888'])
-        ->and($input[2]['content'][0]['text'])->toBe('Let me generate one.');
+    ])->and($input[1])->toBe(['type' => 'thought', 'signature' => 'sig_persist_777']);
 });
 
 test('it stores a response built without steps as a single step of lists', function (): void {

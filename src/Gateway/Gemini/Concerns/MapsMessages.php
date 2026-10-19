@@ -65,7 +65,7 @@ trait MapsMessages
             return;
         }
 
-        // A signature never rides on a function call, so a persisted turn rebuilds the thought step that held it, which thinking models require to open the turn...
+        // A signature never rides on a function call, so a persisted turn opens with the rebuilt thought step that held it...
         if ($message instanceof AssistantMessage && filled($signature = $message->toolCalls->first()?->thoughtSignature)) {
             $input[] = ['type' => 'thought', 'signature' => $signature];
         }
